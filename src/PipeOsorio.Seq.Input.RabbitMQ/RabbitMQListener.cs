@@ -42,7 +42,13 @@ namespace Seq.Input.RabbitMQ
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
 
-            _channel.ExchangeDeclare(exchange: rabbitMQExchangeName, type: rabbitMQExchangeType);
+            if (rabbitMQExchangeName != string.Empty)
+                _channel.ExchangeDeclare(
+                    exchange: rabbitMQExchangeName,
+                    type: rabbitMQExchangeType,
+                    durable: isQueueDurable,
+                    autoDelete: isQueueAutoDelete
+                );
 
             _channel.QueueDeclare(
                 rabbitMQQueue,
@@ -50,8 +56,13 @@ namespace Seq.Input.RabbitMQ
                 exclusive: isQueueExclusive,
                 autoDelete: isQueueAutoDelete,
                 arguments: null);
-            
-            _channel.QueueBind(queue: rabbitMQQueue, exchange: rabbitMQExchangeName, routingKey: rabbitMQRouteKey);
+
+            if (rabbitMQRouteKey != string.Empty)
+                _channel.QueueBind(
+                    queue: rabbitMQQueue,
+                    exchange: rabbitMQExchangeName,
+                    routingKey: rabbitMQRouteKey
+                );
 
             var consumer = new EventingBasicConsumer(_channel);
             consumer.Received += (model, ea) => receive(ea.Body);
